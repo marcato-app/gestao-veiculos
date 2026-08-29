@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Gestão de Veículos",
+    "slug": "gestao-veiculos",
+    "scheme": "gestaoveiculos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gestaoveiculos.app"
+    },
+    "android": {
+      "package": "com.gestaoveiculos.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A09"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
