@@ -2,41 +2,82 @@
 
 > Este arquivo é mantido pela Claude. Toda vez que terminarmos uma etapa importante, ele é atualizado. Quando você disser "podemos continuar de onde paramos" numa sessão nova, este arquivo deve ser lido primeiro.
 
-Última atualização: 2026-08-29 (Etapa 1 construída — código pronto, nada rodado em produção ainda)
+Última atualização: 2026-08-29 (todas as 6 etapas do plano construídas — código pronto, você está testando a Etapa 1 no Expo Go enquanto o resto foi escrito)
 
 ## Contexto do produto
 
 App completo de gestão de veículos (carro + moto): documentação, manutenção, abastecimento, mural de venda, transferência com verificação de identidade (LGPD), comunidade. Plano completo em `PLANO.md`.
 
-**Decisão importante desta sessão**: o plano original pedia PWA + Cloudflare Workers (mesmo esquema do Marcato PDV, que é um painel de admin pra navegador). O usuário corrigiu isso no meio da conversa — queria "um app mesmo" pra iPhone e Android, não um site instalável. Mudamos pra **Expo/React Native** (mesma stack do Marcato e da Lista de Casamento), que dá um app de verdade, testável via Expo Go e buildável pra loja depois via EAS. A identidade visual (paleta, Poppins, barra de abas com círculo animado) continua vindo do Marcato PDV — só a tecnologia de hospedagem/distribuição mudou.
+**Decisão importante**: o plano original pedia PWA + Cloudflare Workers (mesmo esquema do Marcato PDV, que é um painel de admin pra navegador). O usuário corrigiu isso no meio da conversa — queria "um app mesmo" pra iPhone e Android. Mudamos pra **Expo/React Native** (mesma stack do Marcato e da Lista de Casamento). A identidade visual (paleta, Poppins, barra de abas com círculo animado) continua vindo do Marcato PDV — só a tecnologia de hospedagem/distribuição mudou.
 
-## ✅ Construído nesta sessão — Etapa 1 (código pronto, não testado ao vivo ainda)
+**Ordem de construção**: o usuário pediu pra construir todas as 6 etapas de uma vez ("faz todas as etapas, vou testar a Etapa 1 no Expo Go enquanto isso"). Então a Etapa 1 é a única testada/validada com Supabase de verdade até agora — as etapas 2 a 6 têm build web limpo (`npx expo export -p web`, sem erro), mas **nenhuma delas foi clicada ao vivo ainda**.
 
-- **Estrutura do projeto**: Expo (React Native + Web), mesma convenção do Marcato/Lista de Casamento (`App.js` na raiz, `screens/`, `lib/`, `theme/`, `components/`, `supabase/migrations`).
-- **Sistema visual novo** (`theme/estilos.js`): paleta roxo `#6C3CE9`/verde `#17D9A0` (claro e escuro, valores exatos que o usuário passou), espaçamento 4/8/12/16/20/28, raio 8/10/12/14/pill, sombra padrão e sombra alta, fonte única Poppins (`@expo-google-fonts/poppins`, 4 pesos). Cartões usam `card` translúcido (`rgba`) em vez de cor sólida, como no Marcato PDV.
-- **Barra de abas animada** (`components/BarraInferior.js`): reimplementação genérica (recebe abas por prop) do componente que o usuário mandou como referência — círculo colorido que desliza (`translateX`) até a aba tocada, com efeito de aperta-e-volta (`scale`) no toque, usando `Animated` da própria React Native (sem `reanimated`, que o projeto não tem instalado).
-- **Schema do banco** (`supabase/migrations/0001_init.sql`): tabelas `perfis` (nome/telefone/cpf, 1 por usuário), `veiculos` (placa/marca/modelo/ano/cor/km/tipo carro-ou-moto), `fotos_veiculo` (frente/verso/lateral/interior), `documentos_veiculo` (CRLV). RLS por dono em tudo. **Trigger automático**: `lidar_novo_usuario()` cria a linha em `perfis` sozinha assim que a conta é criada no Supabase Auth, lendo nome/telefone/cpf que o app manda em `options.data` no `signUp` (`security definer`, porque nesse momento ainda não existe sessão autenticada) — evita ter que gravar o perfil na mão depois de um jeito que dependeria de já ter sessão ativa.
-- **CPF com validação de verdade**: `lib/data.js` (`validarCpf`) confere o dígito verificador, não só o formato — evita CPF inventado no cadastro. Também tem máscaras de CPF, telefone e placa.
-- **Cadastro/login** (`screens/AuthScreen.js`): cadastro pede nome, e-mail, telefone (opcional), CPF e senha; login só e-mail/senha. Recuperação de senha (mesmo padrão dos outros dois projetos: `theme/AuthContext.js` com `resetPassword`/`atualizarSenha`/`recuperandoSenha`, tratamento de link via `expo-linking`, tela `ResetPasswordScreen.js`).
-- **Dashboard de veículos** (`screens/VeiculosScreen.js`): KPIs (quantidade de veículos, km total), lista em cards (foto de capa se tiver, placa/ano/cor, km), botão remover (com confirmação), botão "+ Adicionar".
-- **Cadastro/edição de veículo** (`screens/VeiculoFormScreen.js`): tipo (carro/moto, toggle), placa (com máscara), marca, modelo, ano, cor, km atual. Depois de salvar os dados básicos (precisa existir um `id` de veículo pra poder anexar arquivo), libera upload de até 4 fotos (frente/verso/lateral/interior, um slot quadrado cada) e 1 foto do CRLV — tudo pro bucket `veiculos` no Storage, caminho prefixado com `{auth.uid()}/{veiculo.id}/...`.
-- **Perfil** (`screens/PerfilScreen.js`): editar nome/telefone, CPF mostrado mas **não editável** por aqui (é a âncora de identidade que a Etapa 5 vai usar), sair.
-- Build web validado (`npx expo export -p web`, sem erros) antes de qualquer coisa ser commitada.
+## ✅ Etapa 1 — Cadastro + veículo (testando agora)
+
+- Expo (React Native + Web), `App.js` na raiz, `screens/`, `lib/`, `theme/`, `components/`, `supabase/migrations`.
+- Sistema visual (`theme/estilos.js`): roxo `#6C3CE9`/verde `#17D9A0` (claro e escuro), espaçamento 4/8/12/16/20/28, raio 8/10/12/14/pill, sombra padrão e alta, fonte única Poppins. Cartões translúcidos (`rgba`), como no Marcato PDV.
+- Barra de abas animada (`components/BarraInferior.js`): círculo que desliza (`translateX`) + aperta-e-volta (`scale`) via `Animated` nativo, componente genérico (recebe abas por prop). Com 5 abas na barra principal (ver seção de navegação abaixo).
+- Schema (`0001_init.sql`): `perfis`, `veiculos`, `fotos_veiculo`, `documentos_veiculo`, RLS, trigger `lidar_novo_usuario()` que cria o perfil sozinho no cadastro (lê `options.data` do `signUp`).
+- CPF com validação de dígito verificador de verdade (`lib/data.js`).
+- Cadastro/login/recuperação de senha (`AuthScreen.js`, `ResetPasswordScreen.js`, `theme/AuthContext.js`).
+- Dashboard (`VeiculosScreen.js`) + cadastro/edição de veículo com 4 fotos + CRLV (`VeiculoFormScreen.js`).
+- Perfil (`PerfilScreen.js`): nome/telefone editáveis, CPF fixo.
+
+## ✅ Etapa 2 — Manutenção (`ManutencaoScreen.js`, migration `0002`)
+
+- Tabela `manutencoes` (peça/revisão/troca de óleo, com `tipo`), campos em `veiculos` pra alvo de "próxima" revisão/troca de óleo (por data e/ou km).
+- "Última revisão"/"última troca de óleo" **não** são coluna redundante — sempre a linha mais recente de `manutencoes` daquele tipo, consultada ao vivo.
+- Aviso visual (Em dia / Chegando perto / Atrasada) calculado no cliente (`lib/data.js`: `diasParaData`) comparando com a data/km alvo. **Sem notificação push de verdade** — isso exigiria infraestrutura de push token + cron/Edge Function rodando periodicamente, não construído ainda (ver pendências).
+
+## ✅ Etapa 3 — Abastecimento (`AbastecimentoScreen.js`, migration `0003`)
+
+- Registro de abastecimento por veículo (posto, valor, litros, km, data) + KPI de gasto do mês.
+- Postos compartilhados entre todos os usuários (`postos` + `avaliacoes_postos`, nota 1-5 + comentário), ranking por nota média via view `postos_com_nota`.
+- **Sem geolocalização/distância** — o plano pedia "postos próximos" usando a localização do usuário, mas isso precisaria de uma API de geocodificação (converter endereço em lat/lng) que não está configurada. O ranking hoje é só por nota, não por proximidade. Pendência clara pra quando decidirem qual serviço de geocodificação usar (Google Maps API, Mapbox, etc. — todos pagos a partir de certo volume).
+
+## ✅ Etapa 4 — Mural de venda (`MuralScreen.js`, `ChatDetalheScreen.js`, migration `0004`)
+
+- Anunciar veículo já cadastrado (preço + descrição), ativar/desativar.
+- Busca pública com filtro por tipo (carro/moto) e texto (marca/modelo) — view `anuncios_publico` (mesmo padrão de `presentes_publico`/`postos_com_nota`: view criada pelo dono da tabela, contorna o RLS de `veiculos` que é privado por padrão).
+- Chat comprador/vendedor dentro do app (`conversas` + `mensagens`, RLS restrito aos dois participantes). **Sem realtime de verdade** — a tela de chat faz polling a cada 4s (mesmo padrão usado no polling de pagamento Pix da Lista de Casamento), não usa `supabase.channel()`. Funciona, mas não é instantâneo.
+
+## ✅ Etapa 5 — Transferência de veículo (`TransferenciaScreen.js`, migration `0005`)
+
+**Atenção, isso é o mais importante de entender antes de usar com clientes de verdade**: a "verificação de identidade" aqui **não é KYC de verdade**. É upload manual de foto do documento + selfie, guardado num bucket **privado** (`documentos-transferencia`, ao contrário do bucket `veiculos` que é público — aqui uso `createSignedUrl` com expiração de 1h, nunca `getPublicUrl`). Cada lado só vê o próprio documento, não o do outro — não tem verificação cruzada automática nem humana ainda. Trate como uma "declaração assinada digitalmente", não como uma garantia legal ou anti-fraude de verdade. Isso fica registrado como aviso dentro do próprio app (`TransferenciaScreen.js`).
+
+Fluxo: vendedor escolhe o veículo + informa o CPF do comprador (que **precisa já ter conta no app** com esse CPF — não criei convite pra quem ainda não tem conta, seria muito mais complexo). Os dois aceitam um termo de transferência (texto fixo) + um checkbox de consentimento LGPD separado, e enviam documento+selfie. O vendedor confirma a conclusão, que aí sim troca `veiculos.usuario_id` pro comprador (a posse muda de verdade dentro do app).
+
+**Antes de contratar um fornecedor de KYC de verdade** (tipo Unico, ClearSale, Serpro), essa tela serve como MVP funcional, mas não deve ser vendida como "verificado" pros usuários.
+
+## ✅ Etapa 6 — Comunidade (`ComunidadeScreen.js`, migration `0006`)
+
+- Feed de fotos (`posts_comunidade`) visível pra qualquer usuário autenticado, com curtidas (`curtidas`) e comentários (`comentarios`) — view `comunidade_feed` com contagem agregada.
+- Fotos sobem pro bucket `veiculos` já existente, pasta `comunidade/{uid}/...` (não precisou de bucket novo nem policy nova — a policy de upload já cobre qualquer subpasta dentro da pasta do usuário).
+- "Perfil público" (toggle em `PerfilScreen.js`, coluna `perfis.perfil_publico`): quando ligado, libera uma policy adicional de `select` em `veiculos` pra qualquer autenticado ver os veículos daquele usuário. É uma feature **separada** do feed (o feed já é visível a todos independente desse toggle).
+
+## 🧭 Como a navegação ficou organizada
+
+A barra de abas de baixo (a animada) ficou só com **5** itens — Veículos, Manutenção, Postos, Mural, Perfil — porque o componente foi desenhado pro Marcato PDV com poucas abas, e 7 ficaria espremido/quebrado (o círculo é maior que o espaço disponível por aba). **Transferências** e **Comunidade** ficam acessíveis por dentro do Perfil (dois itens de menu, "🔄 Transferências de veículo" e "💬 Comunidade"), abrindo em tela cheia com um "← Voltar ao app". Funciona, mas se quiserem elevar Comunidade/Transferência pra abas de primeira classe depois, dá pra repensar o componente da barra pra suportar mais itens (ex: um item "Mais" que abre um menu).
 
 ## 🚧 Pendências antes de usar de verdade
 
-1. **Criar um projeto Supabase novo** (separado do Marcato e da Lista de Casamento) — mesma conta/login, projeto diferente.
-2. **Rodar a migration** `0001_init.sql` no SQL Editor.
-3. **Criar o bucket público `veiculos`** no Storage (sem isso, upload de foto/CRLV não funciona — nem a exibição das fotos já enviadas, já que o `<Image>` do app busca a URL sem token de autenticação, então o bucket precisa estar marcado como público pra imagem carregar).
-4. **Preencher o `.env`** local (`EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY`).
-5. **`npm install` e testar de ponta a ponta**: cadastro (conferir que a linha em `perfis` é criada sozinha pelo trigger) → login → cadastrar um veículo → enviar as 4 fotos + CRLV → editar dados → remover um veículo → editar perfil (nome/telefone) → recuperar senha.
-6. Nunca testado num aparelho de verdade (só build web local) — falta abrir no Expo Go.
-7. Ícones/splash são placeholders de cor sólida (roxo `#6C3CE9`) — trocar por arte de verdade antes de qualquer build pra loja.
-8. CPF armazenado em texto puro em `perfis.cpf` — sem criptografia específica. O plano original já previa deixar a parte de LGPD/criptografia pra Etapa 5 (transferência), então isso não é um bug desta etapa, mas fica registrado como pendência de segurança antes de ir pra produção de verdade com usuários reais.
+1. **Rodar as migrations `0002` a `0006`** (a `0001` você já está rodando/rodou). Ordem não importa muito entre elas, mas siga a numeração.
+2. **Criar o bucket privado `documentos-transferencia`** no Storage (Etapa 5) — **não marcar como público**, ao contrário do bucket `veiculos`.
+3. Testar cada etapa nova de ponta a ponta (nenhuma foi clicada ao vivo ainda, só validada por build):
+   - Manutenção: registrar peça trocada, definir lembrete de revisão, ver o aviso mudar de cor.
+   - Abastecimento: registrar abastecimento, cadastrar e avaliar um posto (precisa de 2 contas pra testar avaliação de terceiro fazendo sentido).
+   - Mural: anunciar um veículo, ver ele aparecer pra outra conta, iniciar uma conversa, mandar mensagem.
+   - Transferência: precisa de 2 contas com CPF cadastrado — iniciar, aceitar termo dos dois lados, subir documento dos dois lados, concluir, e confirmar que o veículo mudou de dono.
+   - Comunidade: postar foto, curtir/comentar com outra conta, ligar "perfil público" e confirmar que a outra conta consegue ver os veículos.
+4. Push notification de verdade pros lembretes de manutenção (hoje é só um aviso visual dentro do app, não notifica fora dele).
+5. Geolocalização de postos (Etapa 3) — decidir e configurar uma API de geocodificação.
+6. Decidir um fornecedor de KYC de verdade antes de anunciar a Etapa 5 como "verificação de identidade" pros usuários.
+7. Ícones/splash ainda são placeholders de cor sólida.
+8. CPF em texto puro no banco (sem criptografia extra) — considerar antes de ter usuários reais em produção.
 
 ## 📋 Próximos passos sugeridos (ordem)
-1. Rodar as pendências 1–5 acima (todas manuais, fora do código).
-2. Testar o fluxo ponta a ponta (`npx expo start`, Expo Go num celular de verdade).
-3. Decidir domínio/deploy da versão web (Netlify, como os outros dois projetos) — `netlify.toml` já está no repo.
-4. Trocar os ícones placeholder por arte de verdade.
-5. Começar a Etapa 2 (Manutenção): histórico de peças trocadas, revisão, troca de óleo, lembretes.
+1. Terminar de validar a Etapa 1 (você já está nisso).
+2. Rodar as migrations 0002-0006 e o bucket `documentos-transferencia`.
+3. Testar cada etapa nova, uma de cada vez, na ordem que aparecem acima.
+4. Decidir sobre geocodificação (Etapa 3) e fornecedor de KYC (Etapa 5) — são as duas maiores pendências de "serviço externo pago" que faltam pro produto ficar completo de verdade.
+5. Deploy da versão web (Netlify) e ícones de verdade antes de qualquer build pra loja.

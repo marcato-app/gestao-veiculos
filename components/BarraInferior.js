@@ -64,8 +64,8 @@ export default function BarraInferior({ abas, abaAtiva, onSelecionar }) {
           if (ativo) return <View key={item.id} style={estilos.tabItem} />;
           return (
             <TouchableOpacity key={item.id} style={estilos.tabItem} onPress={() => selecionarAba(item)}>
-              <Ionicons name={item.icone} size={21} color={cores.textoSecundario} />
-              <Text style={estilos.tabText}>{item.label}</Text>
+              <Ionicons name={item.icone} size={abas.length > 5 ? 17 : 21} color={cores.textoSecundario} />
+              <Text style={estilos.tabText} numberOfLines={1} adjustsFontSizeToFit>{item.label}</Text>
             </TouchableOpacity>
           );
         })}

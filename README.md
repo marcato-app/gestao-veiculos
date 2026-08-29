@@ -28,13 +28,14 @@ iPhone. Pra testar no navegador: `npx expo start --web`.
 
 ## Configurar o backend (Supabase)
 
-1. Rode a migration `supabase/migrations/0001_init.sql` no SQL Editor
-   do seu projeto Supabase — cria as tabelas (`perfis`, `veiculos`,
-   `fotos_veiculo`, `documentos_veiculo`), o trigger que cria o perfil
-   automaticamente no cadastro, e as políticas de RLS.
-2. Crie um bucket de **Storage público** chamado `veiculos` (usado pra
-   fotos do veículo e foto do CRLV). Não tem como criar bucket via SQL
-   — é em Storage → New bucket no painel.
+1. Rode as migrations em `supabase/migrations/` **em ordem** (`0001` a
+   `0006`) no SQL Editor do seu projeto Supabase.
+2. Crie um bucket de **Storage público** chamado `veiculos` (fotos do
+   veículo, CRLV, e fotos da Comunidade). Não tem como criar bucket via
+   SQL — é em Storage → New bucket no painel.
+3. Crie um bucket de **Storage privado** chamado `documentos-transferencia`
+   (documento + selfie da Etapa 5) — **não marque como público**, esse
+   é acessado só via URL assinada temporária, nunca por link direto.
 
 ## Visual
 
@@ -52,10 +53,19 @@ dele pra verificação de identidade. Ainda **não** há criptografia
 específica pro CPF armazenado — isso faz parte do trabalho de LGPD que
 o plano original deixa pra Etapa 5, de propósito.
 
-## Próximas etapas (não construídas ainda, nesta ordem)
+## Etapas construídas
 
-2. Manutenção (histórico de peças, revisão, troca de óleo, lembretes)
-3. Abastecimento + avaliação/ranking de postos
-4. Mural de venda (marketplace)
-5. Transferência de veículo (verificação de identidade, LGPD)
+Todas as 6 etapas do plano têm código pronto (ver `PROGRESSO.md` pra
+detalhes e pendências de cada uma):
+
+1. Cadastro + veículo
+2. Manutenção (histórico, lembretes de revisão/troca de óleo)
+3. Abastecimento + avaliação/ranking de postos (sem geolocalização ainda)
+4. Mural de venda (marketplace) + chat
+5. Transferência de veículo (fluxo completo, mas **sem KYC de
+   verdade** — verificação de identidade é manual por enquanto)
 6. Comunidade (feed social)
+
+Transferências e Comunidade ficam acessíveis pelo menu do Perfil (não
+são abas de primeira classe na barra de baixo, que ficou só com 5
+itens — ver `PROGRESSO.md`).
