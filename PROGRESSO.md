@@ -2,7 +2,9 @@
 
 > Este arquivo é mantido pela Claude. Toda vez que terminarmos uma etapa importante, ele é atualizado. Quando você disser "podemos continuar de onde paramos" numa sessão nova, este arquivo deve ser lido primeiro.
 
-Última atualização: 2026-08-29 (todas as 6 etapas do plano construídas — código pronto, você está testando a Etapa 1 no Expo Go enquanto o resto foi escrito)
+Última atualização: 2026-08-29 (todas as 6 etapas do plano construídas — código pronto, app já abre no Expo Go, você está começando a testar a Etapa 1 de ponta a ponta)
+
+**Bug resolvido**: o app não abria no Expo Go (`SyntaxError: private properties are not supported`). Era o Metro cacheando o bundle transformado antes de eu corrigir o `babel.config.js` — a correção final foi forçar `unstable_transformProfile: "default"` no `babel-preset-expo` (em vez de deixar ele assumir que o Hermes do Expo Go suporta campos privados de classe nativamente) **e** limpar o cache do Metro (`npx expo start -c`). Se algum erro estranho voltar depois de mexer no `babel.config.js`/`metro.config.js`, sempre rodar com `-c`.
 
 ## Contexto do produto
 
